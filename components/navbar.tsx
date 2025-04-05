@@ -131,7 +131,7 @@ export default function Navbar() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="hover:bg-coder-primary/10 hover:text-coder-primary focus:bg-coder-primary/10 focus:text-coder-primary">
-                    <Link href="/settings" className="flex w-full">
+                    <Link href="/settingbutton" className="flex w-full">
                       Settings
                     </Link>
                   </DropdownMenuItem>
