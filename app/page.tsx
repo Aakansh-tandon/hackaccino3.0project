@@ -9,6 +9,7 @@ import { motion } from "framer-motion"
 export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null)
 
+  // 3D tilt effect
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
@@ -23,7 +24,8 @@ export default function Home() {
         const centerY = rect.height / 2
         const rotateX = (y - centerY) / 20
         const rotateY = (centerX - x) / 20
-        ;(card as HTMLElement).style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`
+        ;(card as HTMLElement).style.transform =
+          `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`
       })
     }
 
@@ -45,37 +47,30 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center p-4 md:p-24 relative overflow-hidden">
+      {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden z-0">
         <div className="absolute top-0 left-0 w-full h-full bg-coder-grid bg-grid-pattern opacity-20"></div>
-        {Array.from({ length: 20 }).map((_, i) => {
-          const size = Math.random() * 100 + 50
-          const left = Math.random() * 100
-          const top = Math.random() * 100
-          const yAnim = Math.random() * 100 - 50
-          const duration = Math.random() * 10 + 10
-
-          return (
-            <motion.div
-              key={i}
-              className="absolute rounded-full bg-coder-primary opacity-10"
-              style={{
-                width: size,
-                height: size,
-                left: `${left}%`,
-                top: `${top}%`,
-              }}
-              animate={{
-                y: [0, yAnim],
-                opacity: [0.05, 0.1, 0.05],
-              }}
-              transition={{
-                duration: duration,
-                repeat: Infinity,
-                repeatType: "reverse",
-              }}
-            />
-          )
-        })}
+        {Array.from({ length: 20 }).map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full bg-coder-primary opacity-10"
+            style={{
+              width: Math.random() * 100 + 50,
+              height: Math.random() * 100 + 50,
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
+            animate={{
+              y: [0, Math.random() * 100 - 50],
+              opacity: [0.05, 0.1, 0.05],
+            }}
+            transition={{
+              duration: Math.random() * 10 + 10,
+              repeat: Number.POSITIVE_INFINITY,
+              repeatType: "reverse",
+            }}
+          />
+        ))}
       </div>
 
       <div className="max-w-5xl w-full z-10" ref={containerRef}>
@@ -94,11 +89,10 @@ export default function Home() {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12"
         >
-          {/* CARD 1 */}
           <Card className="card-3d border border-coder-primary/20 bg-card/80 backdrop-blur-sm overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-coder-primary/10 to-transparent"></div>
             <CardHeader>
-              <motion.div animate={{ y: [0, -5, 0] }} transition={{ duration: 2, repeat: Infinity }}>
+              <motion.div animate={{ y: [0, -5, 0] }} transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}>
                 <ScanLine className="h-8 w-8 mb-2 text-coder-primary" />
               </motion.div>
               <CardTitle className="text-coder-primary">Scan Products</CardTitle>
@@ -114,11 +108,13 @@ export default function Home() {
             </CardFooter>
           </Card>
 
-          {/* CARD 2 */}
           <Card className="card-3d border border-coder-accent/20 bg-card/80 backdrop-blur-sm overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-coder-accent/10 to-transparent"></div>
             <CardHeader>
-              <motion.div animate={{ y: [0, -5, 0] }} transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}>
+              <motion.div
+                animate={{ y: [0, -5, 0] }}
+                transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, delay: 0.3 }}
+              >
                 <Calendar className="h-8 w-8 mb-2 text-coder-accent" />
               </motion.div>
               <CardTitle className="text-coder-accent">Track Expiry</CardTitle>
@@ -135,11 +131,13 @@ export default function Home() {
             </CardFooter>
           </Card>
 
-          {/* CARD 3 */}
           <Card className="card-3d border border-coder-secondary/20 bg-card/80 backdrop-blur-sm overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-coder-secondary/10 to-transparent"></div>
             <CardHeader>
-              <motion.div animate={{ y: [0, -5, 0] }} transition={{ duration: 2, repeat: Infinity, delay: 0.6 }}>
+              <motion.div
+                animate={{ y: [0, -5, 0] }}
+                transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, delay: 0.6 }}
+              >
                 <ChefHat className="h-8 w-8 mb-2 text-coder-secondary" />
               </motion.div>
               <CardTitle className="text-coder-secondary">Recipe Suggestions</CardTitle>
@@ -183,3 +181,4 @@ export default function Home() {
     </main>
   )
 }
+

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,11 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, ChefHat, Plus, X } from "lucide-react"
+import { Loader2, ChefHat, Plus, X, AlertTriangle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-
-// Sample expiring ingredients from inventory
-const expiringIngredients = ["Chicken", "Spinach", "Yogurt", "Bread", "Tomatoes", "Cheese"]
 
 // Dietary preferences options
 const dietaryOptions = [
@@ -25,12 +22,59 @@ const dietaryOptions = [
 ]
 
 export default function GenerateRecipePage() {
-  const [selectedIngredients, setSelectedIngredients] = useState<string[]>(expiringIngredients.slice(0, 3))
+  // Get expiring ingredients from inventory (in a real app, this would come from a database)
+  const [expiringIngredients, setExpiringIngredients] = useState<string[]>([
+    "Chicken",
+    "Spinach",
+    "Yogurt",
+    "Bread",
+    "Tomatoes",
+    "Cheese",
+  ])
+  const [selectedIngredients, setSelectedIngredients] = useState<string[]>([])
   const [newIngredient, setNewIngredient] = useState("")
   const [preferences, setPreferences] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
+  const [apiKeyMissing, setApiKeyMissing] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
+
+  // Load ingredients from localStorage if available
+  useEffect(() => {
+    // Check if we have ingredients passed from the manual entry page
+    const storedIngredients = localStorage.getItem("recipeIngredients")
+    if (storedIngredients) {
+      try {
+        const parsedIngredients = JSON.parse(storedIngredients)
+        setSelectedIngredients(parsedIngredients)
+        // Clear after loading
+        localStorage.removeItem("recipeIngredients")
+      } catch (error) {
+        console.error("Error parsing stored ingredients:", error)
+      }
+    } else {
+      // Default to first 3 expiring ingredients
+      setSelectedIngredients(expiringIngredients.slice(0, 3))
+    }
+
+    // Try to load inventory items for expiring ingredients
+    try {
+      const inventory = JSON.parse(localStorage.getItem("inventory") || "[]")
+      if (inventory.length > 0) {
+        // Sort by days left and get the names
+        const sortedItems = inventory
+          .sort((a: any, b: any) => a.daysLeft - b.daysLeft)
+          .map((item: any) => item.name)
+          .slice(0, 6) // Get top 6 items expiring soon
+
+        if (sortedItems.length > 0) {
+          setExpiringIngredients(sortedItems)
+        }
+      }
+    } catch (error) {
+      console.error("Error loading inventory:", error)
+    }
+  }, [])
 
   // Add a new ingredient
   const addIngredient = () => {
@@ -64,6 +108,7 @@ export default function GenerateRecipePage() {
     }
 
     setLoading(true)
+    setApiKeyMissing(false)
 
     try {
       const response = await fetch("/api/recipes", {
@@ -78,6 +123,11 @@ export default function GenerateRecipePage() {
       })
 
       if (!response.ok) {
+        const errorData = await response.json()
+        if (errorData.error && errorData.error.includes("API key")) {
+          setApiKeyMissing(true)
+          throw new Error("OpenAI API key is missing")
+        }
         throw new Error("Failed to generate recipe")
       }
 
@@ -90,11 +140,21 @@ export default function GenerateRecipePage() {
       router.push("/recipes/results")
     } catch (error) {
       console.error("Error generating recipe:", error)
-      toast({
-        title: "Error",
-        description: "Failed to generate recipe. Please try again.",
-        variant: "destructive",
-      })
+
+      if (String(error).includes("API key")) {
+        setApiKeyMissing(true)
+        toast({
+          title: "API Key Missing",
+          description: "Using demo mode with limited functionality",
+          variant: "warning",
+        })
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to generate recipe. Please try again.",
+          variant: "destructive",
+        })
+      }
     } finally {
       setLoading(false)
     }
@@ -106,6 +166,20 @@ export default function GenerateRecipePage() {
         <ChefHat className="mr-2 h-6 w-6" />
         Generate Custom Recipe
       </h1>
+
+      {apiKeyMissing && (
+        <Card className="mb-6 border-warning/50 bg-warning/5">
+          <CardContent className="p-4 flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-warning mt-0.5 flex-shrink-0" />
+            <div>
+              <h3 className="font-medium text-warning mb-1">OpenAI API Key Missing</h3>
+              <p className="text-sm text-muted-foreground">
+                The application is running in demo mode. Recipe generation will use pre-defined templates instead of AI.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="mb-8">
         <CardHeader>

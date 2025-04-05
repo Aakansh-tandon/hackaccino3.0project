@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast"
 import { motion, AnimatePresence } from "framer-motion"
 
-// Sample inventory data
+// Sample inventory data as fallback
 const sampleInventory = [
   {
     id: 1,
@@ -54,9 +54,33 @@ export default function InventoryPage() {
   const { toast } = useToast()
   const containerRef = useRef<HTMLDivElement>(null)
 
+  // Load inventory from localStorage on mount
+  useEffect(() => {
+    try {
+      const storedInventory = localStorage.getItem("inventory")
+      if (storedInventory) {
+        const parsedInventory = JSON.parse(storedInventory)
+        if (Array.isArray(parsedInventory) && parsedInventory.length > 0) {
+          setInventory(parsedInventory)
+        }
+      }
+    } catch (error) {
+      console.error("Error loading inventory from localStorage:", error)
+    }
+  }, [])
+
   // Function to remove an item from inventory
   const removeItem = (id: number) => {
-    setInventory(inventory.filter((item) => item.id !== id))
+    const updatedInventory = inventory.filter((item) => item.id !== id)
+    setInventory(updatedInventory)
+
+    // Update localStorage
+    try {
+      localStorage.setItem("inventory", JSON.stringify(updatedInventory))
+    } catch (error) {
+      console.error("Error updating localStorage:", error)
+    }
+
     toast({
       title: "Item removed",
       description: "Item has been removed from your inventory",
@@ -68,6 +92,14 @@ export default function InventoryPage() {
     if (daysLeft <= 2) return "destructive"
     if (daysLeft <= 5) return "warning"
     return "outline"
+  }
+
+  // Find recipes for a specific item
+  const findRecipesForItem = (itemName: string) => {
+    // Store the ingredient in localStorage for the recipe generation page
+    localStorage.setItem("recipeIngredients", JSON.stringify([itemName]))
+    // Navigate to recipe generation page
+    window.location.href = "/recipes/generate"
   }
 
   // Show notification for items expiring in less than 3 days
@@ -208,16 +240,15 @@ export default function InventoryPage() {
                             >
                               {item.daysLeft} days left
                             </Badge>
-                            <Link href="/recipes/generate">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                title="Find recipes"
-                                className="hover:bg-coder-primary/10 hover:text-coder-primary"
-                              >
-                                <ChefHat className="h-4 w-4" />
-                              </Button>
-                            </Link>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Find recipes"
+                              className="hover:bg-coder-primary/10 hover:text-coder-primary"
+                              onClick={() => findRecipesForItem(item.name)}
+                            >
+                              <ChefHat className="h-4 w-4" />
+                            </Button>
                           </div>
                         </CardContent>
                       </Card>
@@ -276,16 +307,15 @@ export default function InventoryPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Link href="/recipes/generate">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              title="Find recipes"
-                              className="hover:bg-coder-primary/10 hover:text-coder-primary"
-                            >
-                              <ChefHat className="h-4 w-4" />
-                            </Button>
-                          </Link>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Find recipes"
+                            className="hover:bg-coder-primary/10 hover:text-coder-primary"
+                            onClick={() => findRecipesForItem(item.name)}
+                          >
+                            <ChefHat className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
