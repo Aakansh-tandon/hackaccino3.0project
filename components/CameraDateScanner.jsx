@@ -1,5 +1,3 @@
-// src/App.js
-
 import React, { useRef, useState } from "react";
 import Webcam from "react-webcam";
 import Tesseract from "tesseract.js";
