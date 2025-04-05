@@ -41,7 +41,7 @@ const sampleRecipes = [
     cookingTime: "15 mins",
     difficulty: "Easy",
     matchedIngredients: 2,
-    image: "/placeholder.svg?height=200&width=400",
+    image: "/placeholder.svg?height=200&width=400", 
   },
 ]
 
