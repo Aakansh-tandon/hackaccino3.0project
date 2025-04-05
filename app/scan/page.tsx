@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScanLine, Camera, X, Check, Edit, ArrowRight } from "lucide-react"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 
 export default function ScanPage() {
   const [scanning, setScanning] = useState(false)
   const [result, setResult] = useState<string | null>(null)
   const [showOptions, setShowOptions] = useState(true)
+  const [productName, setProductName] = useState<string>("")
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const router = useRouter()
@@ -46,17 +46,23 @@ export default function ScanPage() {
           const imageData = canvas.toDataURL()
 
           const { createWorker } = await import("tesseract.js")
-          const worker = await createWorker("eng")
+          const worker = await createWorker({
+            logger: (m) => console.log(m),
+          })
+
+          await worker.loadLanguage("eng")
+          await worker.initialize("eng")
           const {
             data: { text },
           } = await worker.recognize(imageData)
 
-          const match = text.match(
-            /\b(\d{1,2}[-\/.]\d{1,2}[-\/.]\d{2,4}|\d{4}[-\/.]\d{1,2}[-\/.]\d{1,2})\b/g
-          );
-          const dateMatch = match ? match[0] : null;
+          const cleanedText = text.replace(/\s+/g, " ").trim()
 
-          if (dateMatch) {
+          const dateMatch = cleanedText.match(
+            /\b(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}|\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2})\b/
+          )
+
+          if (dateMatch && dateMatch[0]) {
             setResult(`Expiry: ${dateMatch[0]}`)
           } else {
             setResult("Couldn't detect expiry date.")
@@ -66,7 +72,8 @@ export default function ScanPage() {
           setScanning(false)
         }
 
-        setTimeout(captureFrame, 3000)
+        // Thoda delay de rha hu capture ko camera focus hone ka time mile
+        setTimeout(captureFrame, 3500)
       }
     } catch (error) {
       console.error("Error accessing camera:", error)
@@ -91,11 +98,30 @@ export default function ScanPage() {
   }
 
   const handleScanResult = () => {
+    if (!productName) {
+      toast({
+        title: "Missing Product Name",
+        description: "Please enter the product name before saving.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const newItem = {
+      name: productName,
+      expiry: result?.replace("Expiry: ", "") || "N/A",
+    }
+
+    const existing = JSON.parse(localStorage.getItem("inventory") || "[]")
+    const updated = [...existing, newItem]
+    localStorage.setItem("inventory", JSON.stringify(updated))
+
     toast({
-      title: "Scan Successful",
-      description: "Expiry date detected and added to calendar",
+      title: "Product Added!",
+      description: `${productName} expiring on ${newItem.expiry} added to inventory.`,
       variant: "default",
     })
+
     router.push("/inventory")
   }
 
@@ -175,10 +201,17 @@ export default function ScanPage() {
               </>
             ) : (
               <div className="aspect-video bg-muted flex items-center justify-center rounded-md">
-                <div className="text-center p-6">
+                <div className="text-center p-6 w-full">
                   <Check className="h-12 w-12 text-primary mx-auto mb-4" />
                   <h3 className="text-xl font-medium mb-2">Scan Complete</h3>
-                  <p className="text-muted-foreground mb-4">{result}</p>
+                  <p className="text-muted-foreground mb-2">{result}</p>
+                  <input
+                    type="text"
+                    placeholder="Enter Product Name"
+                    value={productName}
+                    onChange={(e) => setProductName(e.target.value)}
+                    className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
                 </div>
               </div>
             )}
@@ -202,6 +235,7 @@ export default function ScanPage() {
               onClick={() => {
                 setResult(null)
                 setScanning(false)
+                setProductName("")
                 setShowOptions(true)
               }}
               className="flex-1"
