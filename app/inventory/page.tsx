@@ -51,6 +51,7 @@ const sampleInventory = [
 
 export default function InventoryPage() {
   const [inventory, setInventory] = useState(sampleInventory)
+  const [searchTerm, setSearchTerm] = useState("")
   const { toast } = useToast()
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -273,6 +274,16 @@ export default function InventoryPage() {
           <CardHeader>
             <CardTitle className="text-lg text-coder-primary">All Items</CardTitle>
           </CardHeader>
+          <div className="mb-4 flex justify-start">
+          <input
+            type="text"
+            placeholder="Search items..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="ml-4 border border-blue-500 rounded-md px-3 py-2 text-sm w-full max-w-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          </div>
+
           <CardContent>
             <Table>
               <TableHeader>
@@ -286,7 +297,12 @@ export default function InventoryPage() {
               </TableHeader>
               <TableBody>
                 <AnimatePresence>
-                  {inventory.map((item, index) => (
+                {inventory
+  .filter((item) =>
+    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.category.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+  .map((item, index) => (
                     <motion.tr
                       key={item.id}
                       initial={{ opacity: 0, y: 10 }}
