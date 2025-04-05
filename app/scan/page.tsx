@@ -9,7 +9,6 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 
 export default function ScanPage() {
-  const [activeTab, setActiveTab] = useState("barcode")
   const [scanning, setScanning] = useState(false)
   const [result, setResult] = useState<string | null>(null)
   const [showOptions, setShowOptions] = useState(true)
@@ -18,7 +17,6 @@ export default function ScanPage() {
   const router = useRouter()
   const { toast } = useToast()
 
-  // Start camera for scanning
   const startScanning = async () => {
     setShowOptions(false)
     try {
@@ -28,18 +26,43 @@ export default function ScanPage() {
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream
+        videoRef.current.play()
         setScanning(true)
 
-        // In a real app, we would implement actual barcode/OCR scanning here
-        // For demo purposes, we'll simulate a scan after 3 seconds
-        setTimeout(() => {
-          if (activeTab === "barcode") {
-            setResult("8901058851826") // Simulated barcode result
+        const track = stream.getVideoTracks()[0]
+        const imageCapture = new ImageCapture(track)
+
+        const captureFrame = async () => {
+          const bitmap = await imageCapture.grabFrame()
+          const canvas = canvasRef.current
+          const ctx = canvas?.getContext("2d")
+
+          if (!canvas || !ctx) return
+
+          canvas.width = bitmap.width
+          canvas.height = bitmap.height
+          ctx.drawImage(bitmap, 0, 0)
+
+          const imageData = canvas.toDataURL()
+
+          const { createWorker } = await import("tesseract.js")
+          const worker = await createWorker("eng")
+          const {
+            data: { text },
+          } = await worker.recognize(imageData)
+
+          const dateMatch = text.match(/(\d{1,2}\/\d{1,2}\/\d{4})/)
+          if (dateMatch) {
+            setResult(`Expiry: ${dateMatch[0]}`)
           } else {
-            setResult("Best Before: 15/04/2025") // Simulated OCR result
+            setResult("Couldn't detect expiry date.")
           }
+
+          await worker.terminate()
           setScanning(false)
-        }, 3000)
+        }
+
+        setTimeout(captureFrame, 3000)
       }
     } catch (error) {
       console.error("Error accessing camera:", error)
@@ -53,7 +76,6 @@ export default function ScanPage() {
     }
   }
 
-  // Stop camera
   const stopScanning = () => {
     if (videoRef.current && videoRef.current.srcObject) {
       const tracks = (videoRef.current.srcObject as MediaStream).getTracks()
@@ -64,27 +86,19 @@ export default function ScanPage() {
     }
   }
 
-  // Handle scan result
   const handleScanResult = () => {
-    // In a real app, we would process the scan result here
-    // For demo purposes, we'll just show a success message and redirect
     toast({
       title: "Scan Successful",
-      description:
-        activeTab === "barcode" ? "Product added to your inventory" : "Expiry date detected and added to calendar",
+      description: "Expiry date detected and added to calendar",
       variant: "default",
     })
-
-    // Redirect to product details or add product form
     router.push("/inventory")
   }
 
-  // Navigate to manual entry
   const goToManualEntry = () => {
     router.push("/add-manual")
   }
 
-  // Clean up on unmount
   useEffect(() => {
     return () => {
       stopScanning()
@@ -95,115 +109,107 @@ export default function ScanPage() {
     <div className="container max-w-md mx-auto p-4">
       <h1 className="text-2xl font-bold mb-6 text-center">Add Product</h1>
 
-      <Tabs defaultValue="barcode" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-2 mb-6">
-          <TabsTrigger value="barcode">Barcode</TabsTrigger>
-          <TabsTrigger value="expiry">Expiry Date</TabsTrigger>
-        </TabsList>
-
-        {showOptions && !result ? (
-          <div className="grid grid-cols-1 gap-4 mb-6">
-            <Card
-              className="border-coder-primary/20 hover:border-coder-primary/50 transition-colors cursor-pointer"
-              onClick={startScanning}
-            >
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center">
-                  <Camera className="mr-2 h-5 w-5 text-coder-primary" />
-                  Scan with Camera
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Use your camera to scan {activeTab === "barcode" ? "product barcode" : "expiry date"}
-                </p>
-                <Button className="w-full mt-4">
-                  Start Camera <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card
-              className="border-coder-accent/20 hover:border-coder-accent/50 transition-colors cursor-pointer"
-              onClick={goToManualEntry}
-            >
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center">
-                  <Edit className="mr-2 h-5 w-5 text-coder-accent" />
-                  Enter Manually
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">Manually enter product details and expiry date</p>
-                <Button
-                  variant="outline"
-                  className="w-full mt-4 border-coder-accent/50 text-coder-accent hover:bg-coder-accent/10"
-                >
-                  Enter Details <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        ) : (
-          <Card className="mb-6">
-            <CardContent className="p-0 relative">
-              {!result ? (
-                <>
-                  <div className="aspect-video bg-muted relative overflow-hidden rounded-md">
-                    <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline />
-                    {scanning && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-64 h-64 border-2 border-primary rounded-lg flex items-center justify-center">
-                          <ScanLine className="h-8 w-8 text-primary animate-pulse" />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <canvas ref={canvasRef} className="hidden" />
-                </>
-              ) : (
-                <div className="aspect-video bg-muted flex items-center justify-center rounded-md">
-                  <div className="text-center p-6">
-                    <Check className="h-12 w-12 text-primary mx-auto mb-4" />
-                    <h3 className="text-xl font-medium mb-2">Scan Complete</h3>
-                    <p className="text-muted-foreground mb-4">{result}</p>
-                  </div>
-                </div>
-              )}
+      {showOptions && !result ? (
+        <div className="grid grid-cols-1 gap-4 mb-6">
+          <Card
+            className="border-coder-primary/20 hover:border-coder-primary/50 transition-colors cursor-pointer"
+            onClick={startScanning}
+          >
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center">
+                <Camera className="mr-2 h-5 w-5 text-coder-primary" />
+                Scan Expiry Date
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Use your camera to scan expiry date
+              </p>
+              <Button className="w-full mt-4">
+                Start Camera <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
             </CardContent>
           </Card>
-        )}
 
-        <div className="flex gap-4">
-          {!showOptions && !scanning && !result ? (
-            <Button variant="outline" onClick={() => setShowOptions(true)} className="flex-1">
-              <X className="mr-2 h-4 w-4" /> Back to Options
-            </Button>
-          ) : !result && scanning ? (
-            <Button variant="outline" onClick={stopScanning} className="flex-1">
-              <X className="mr-2 h-4 w-4" /> Cancel
-            </Button>
-          ) : result ? (
-            <>
+          <Card
+            className="border-coder-accent/20 hover:border-coder-accent/50 transition-colors cursor-pointer"
+            onClick={goToManualEntry}
+          >
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center">
+                <Edit className="mr-2 h-5 w-5 text-coder-accent" />
+                Enter Manually
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">Manually enter product details and expiry date</p>
               <Button
                 variant="outline"
-                onClick={() => {
-                  setResult(null)
-                  setScanning(false)
-                  setShowOptions(true)
-                }}
-                className="flex-1"
+                className="w-full mt-4 border-coder-accent/50 text-coder-accent hover:bg-coder-accent/10"
               >
-                <X className="mr-2 h-4 w-4" /> Rescan
+                Enter Details <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-              <Button onClick={handleScanResult} className="flex-1">
-                <Check className="mr-2 h-4 w-4" /> Confirm
-              </Button>
-            </>
-          ) : null}
+            </CardContent>
+          </Card>
         </div>
-      </Tabs>
+      ) : (
+        <Card className="mb-6">
+          <CardContent className="p-0 relative">
+            {!result ? (
+              <>
+                <div className="aspect-video bg-muted relative overflow-hidden rounded-md">
+                  <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline />
+                  {scanning && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-64 h-64 border-2 border-primary rounded-lg flex items-center justify-center">
+                        <ScanLine className="h-8 w-8 text-primary animate-pulse" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <canvas ref={canvasRef} className="hidden" />
+              </>
+            ) : (
+              <div className="aspect-video bg-muted flex items-center justify-center rounded-md">
+                <div className="text-center p-6">
+                  <Check className="h-12 w-12 text-primary mx-auto mb-4" />
+                  <h3 className="text-xl font-medium mb-2">Scan Complete</h3>
+                  <p className="text-muted-foreground mb-4">{result}</p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="flex gap-4">
+        {!showOptions && !scanning && !result ? (
+          <Button variant="outline" onClick={() => setShowOptions(true)} className="flex-1">
+            <X className="mr-2 h-4 w-4" /> Back to Options
+          </Button>
+        ) : !result && scanning ? (
+          <Button variant="outline" onClick={stopScanning} className="flex-1">
+            <X className="mr-2 h-4 w-4" /> Cancel
+          </Button>
+        ) : result ? (
+          <>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setResult(null)
+                setScanning(false)
+                setShowOptions(true)
+              }}
+              className="flex-1"
+            >
+              <X className="mr-2 h-4 w-4" /> Rescan
+            </Button>
+            <Button onClick={handleScanResult} className="flex-1">
+              <Check className="mr-2 h-4 w-4" /> Confirm
+            </Button>
+          </>
+        ) : null}
+      </div>
     </div>
   )
 }
-
