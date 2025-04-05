@@ -51,7 +51,11 @@ export default function ScanPage() {
             data: { text },
           } = await worker.recognize(imageData)
 
-          const dateMatch = text.match(/(\d{1,2}\/\d{1,2}\/\d{4})/)
+          const match = text.match(
+            /\b(\d{1,2}[-\/.]\d{1,2}[-\/.]\d{2,4}|\d{4}[-\/.]\d{1,2}[-\/.]\d{1,2})\b/g
+          );
+          const dateMatch = match ? match[0] : null;
+
           if (dateMatch) {
             setResult(`Expiry: ${dateMatch[0]}`)
           } else {
