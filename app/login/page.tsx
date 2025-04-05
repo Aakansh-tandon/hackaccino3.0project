@@ -75,6 +75,8 @@ export default function LoginPage() {
 
       // Store auth state
       localStorage.setItem("isAuthenticated", "true")
+      localStorage.setItem("user", JSON.stringify({ name: "Demo User", email: "demo@example.com" }))
+
 
       toast({
         title: "Demo Login",
