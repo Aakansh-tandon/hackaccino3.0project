@@ -69,7 +69,7 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto p-4 max-w-4xl">
-      <h1 className="text-2xl font-bold mb-6">My Profile</h1>
+      <h1 className="text-2xl font-bold bg-gradient-to-r from-coder-primary to-coder-accent bg-clip-text text-transparent">My Profile</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Profile sidebar */}

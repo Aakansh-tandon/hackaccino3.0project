@@ -290,7 +290,7 @@ export default function ScanPage() {
 
   return (
     <div className="container max-w-md mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6 text-center">Add Product</h1>
+      <h1 className="text-2xl font-bold bg-gradient-to-r from-coder-primary to-coder-accent bg-clip-text text-transparent text-center">Add Product</h1>
 
       {showOptions && !result && !showProductForm ? (
         <div className="grid grid-cols-1 gap-4 mb-6">

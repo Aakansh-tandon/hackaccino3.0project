@@ -51,7 +51,7 @@ export default function RecipesPage() {
   return (
     <div className="container mx-auto p-4 max-w-4xl">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Recipe Suggestions</h1>
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-coder-primary to-coder-accent bg-clip-text text-transparent">Recipe Suggestions</h1>
         <Link href="/recipes/generate">
           <Button>
             <ChefHat className="mr-2 h-4 w-4" /> Generate Custom Recipe

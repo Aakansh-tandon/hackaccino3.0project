@@ -80,7 +80,7 @@ export default function SettingsPage() {
   return (
     <div className="container mx-auto p-4 max-w-4xl">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Account Settings</h1>
+      <h1 className="text-2xl font-bold bg-gradient-to-r from-coder-primary to-coder-accent bg-clip-text text-transparent">Account Settings</h1>
         <Link href="/profile">
           <Button variant="outline">Back to Profile</Button>
         </Link>
