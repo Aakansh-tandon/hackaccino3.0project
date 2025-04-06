@@ -1,14 +1,15 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ScanLine, Plus, Trash2, ChefHat, AlertTriangle } from "lucide-react"
+import { ScanLine, Plus, Trash2, ChefHat, AlertTriangle, Search } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
-import { motion, AnimatePresence } from "framer-motion"
+import { AnimatePresence, motion } from "framer-motion"
 
 // Sample inventory data as fallback
 const sampleInventory = [
@@ -51,9 +52,9 @@ const sampleInventory = [
 
 export default function InventoryPage() {
   const [inventory, setInventory] = useState(sampleInventory)
-  const [searchTerm, setSearchTerm] = useState("")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [filteredInventory, setFilteredInventory] = useState(inventory)
   const { toast } = useToast()
-  const containerRef = useRef<HTMLDivElement>(null)
 
   // Load inventory from localStorage on mount
   useEffect(() => {
@@ -69,6 +70,19 @@ export default function InventoryPage() {
       console.error("Error loading inventory from localStorage:", error)
     }
   }, [])
+
+  // Filter inventory when search query or inventory changes
+  useEffect(() => {
+    if (!searchQuery) {
+      setFilteredInventory(inventory)
+    } else {
+      const query = searchQuery.toLowerCase()
+      const filtered = inventory.filter(
+        (item) => item.name.toLowerCase().includes(query) || item.category.toLowerCase().includes(query),
+      )
+      setFilteredInventory(filtered)
+    }
+  }, [searchQuery, inventory])
 
   // Function to remove an item from inventory
   const removeItem = (id: number) => {
@@ -92,7 +106,14 @@ export default function InventoryPage() {
   const getBadgeVariant = (daysLeft: number) => {
     if (daysLeft <= 2) return "destructive"
     if (daysLeft <= 5) return "warning"
-    return "outline"
+    return "success"
+  }
+
+  // Function to get status text based on days left
+  const getStatusText = (daysLeft: number) => {
+    if (daysLeft <= 2) return `${daysLeft} days left`
+    if (daysLeft <= 5) return "Expiring Soon"
+    return "Fresh"
   }
 
   // Find recipes for a specific item
@@ -118,49 +139,8 @@ export default function InventoryPage() {
     }
   }, [])
 
-  // 3D card effect
-  useEffect(() => {
-    const container = containerRef.current
-    if (!container) return
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const cards = container.querySelectorAll(".card-3d")
-      cards.forEach((card) => {
-        const rect = (card as HTMLElement).getBoundingClientRect()
-        const x = e.clientX - rect.left
-        const y = e.clientY - rect.top
-        const centerX = rect.width / 2
-        const centerY = rect.height / 2
-        const rotateX = (y - centerY) / 30
-        const rotateY = (centerX - x) / 30
-        ;(card as HTMLElement).style.transform =
-          `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`
-      })
-    }
-
-    const handleMouseLeave = () => {
-      const cards = container.querySelectorAll(".card-3d")
-      cards.forEach((card) => {
-        ;(card as HTMLElement).style.transform = "perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)"
-      })
-    }
-
-    container.addEventListener("mousemove", handleMouseMove)
-    container.addEventListener("mouseleave", handleMouseLeave)
-
-    return () => {
-      container.removeEventListener("mousemove", handleMouseMove)
-      container.removeEventListener("mouseleave", handleMouseLeave)
-    }
-  }, [])
-
   return (
-    <div className="container mx-auto p-4 max-w-4xl relative" ref={containerRef}>
-      {/* Background elements */}
-      <div className="absolute inset-0 overflow-hidden z-0 pointer-events-none">
-        <div className="absolute top-0 left-0 w-full h-full bg-coder-grid bg-grid-pattern opacity-10"></div>
-      </div>
-
+    <div className="container mx-auto p-4 max-w-4xl relative">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -192,29 +172,42 @@ export default function InventoryPage() {
         </div>
       </motion.div>
 
+      {/* Search bar */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+        className="mb-6 relative z-10"
+      >
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search inventory by name or category..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 border-coder-primary/30 focus:border-coder-primary"
+          />
+        </div>
+      </motion.div>
+
       {/* Expiring soon section with alert styling */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
       >
-        <Card className="mb-8 border-destructive/50 card-3d bg-card/80 backdrop-blur-sm overflow-hidden">
+        <Card className="mb-8 border-destructive/50 bg-card/80 backdrop-blur-sm overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-destructive/10 to-transparent"></div>
           <CardHeader className="bg-destructive/5 relative">
             <CardTitle className="text-lg flex items-center text-destructive">
-              <motion.div
-                animate={{ rotate: [0, 5, 0, -5, 0] }}
-                transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-              >
-                <AlertTriangle className="mr-2 h-5 w-5 text-destructive" />
-              </motion.div>
+              <AlertTriangle className="mr-2 h-5 w-5 text-destructive" />
               Expiring Soon - Urgent Attention Required
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 relative">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <AnimatePresence>
-                {inventory
+                {filteredInventory
                   .filter((item) => item.daysLeft <= 3)
                   .map((item, index) => (
                     <motion.div
@@ -256,7 +249,7 @@ export default function InventoryPage() {
                     </motion.div>
                   ))}
               </AnimatePresence>
-              {inventory.filter((item) => item.daysLeft <= 3).length === 0 && (
+              {filteredInventory.filter((item) => item.daysLeft <= 3).length === 0 && (
                 <p className="text-muted-foreground col-span-2 text-center py-4">No items expiring soon</p>
               )}
             </div>
@@ -274,16 +267,6 @@ export default function InventoryPage() {
           <CardHeader>
             <CardTitle className="text-lg text-coder-primary">All Items</CardTitle>
           </CardHeader>
-          <div className="mb-4 flex justify-start">
-          <input
-            type="text"
-            placeholder="Search items..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="ml-4 border border-blue-500 rounded-md px-3 py-2 text-sm w-full max-w-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          </div>
-
           <CardContent>
             <Table>
               <TableHeader>
@@ -291,60 +274,63 @@ export default function InventoryPage() {
                   <TableHead className="text-coder-primary">Item</TableHead>
                   <TableHead className="text-coder-primary">Category</TableHead>
                   <TableHead className="text-coder-primary">Expiry Date</TableHead>
-                  <TableHead className="text-coder-primary">Days Left</TableHead>
+                  <TableHead className="text-coder-primary">Status</TableHead>
                   <TableHead className="text-right text-coder-primary">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 <AnimatePresence>
-                {inventory
-  .filter((item) =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.category.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-  .map((item, index) => (
-                    <motion.tr
-                      key={item.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: 0.1 + index * 0.05 }}
-                      className={`${item.daysLeft <= 3 ? "bg-destructive/5" : ""} border-b border-border/40 hover:bg-coder-primary/5`}
-                    >
-                      <TableCell className="font-medium">{item.name}</TableCell>
-                      <TableCell>{item.category}</TableCell>
-                      <TableCell>{new Date(item.expiryDate).toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={getBadgeVariant(item.daysLeft)}
-                          className={item.daysLeft <= 3 ? "animate-pulse" : ""}
-                        >
-                          {item.daysLeft} days
-                        </Badge>
+                  {filteredInventory.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        {searchQuery ? "No items match your search" : "No items in your inventory"}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title="Find recipes"
-                            className="hover:bg-coder-primary/10 hover:text-coder-primary"
-                            onClick={() => findRecipesForItem(item.name)}
+                    </TableRow>
+                  ) : (
+                    filteredInventory.map((item, index) => (
+                      <motion.tr
+                        key={item.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: 0.1 + index * 0.05 }}
+                        className={`border-b border-border/40 hover:bg-primary/5`}
+                      >
+                        <TableCell className="font-medium">{item.name}</TableCell>
+                        <TableCell>{item.category}</TableCell>
+                        <TableCell>{new Date(item.expiryDate).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={getBadgeVariant(item.daysLeft)}
+                            className={item.daysLeft <= 3 ? "animate-pulse" : ""}
                           >
-                            <ChefHat className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeItem(item.id)}
-                            title="Remove item"
-                            className="hover:bg-destructive/10 hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </motion.tr>
-                  ))}
+                            {getStatusText(item.daysLeft)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Find recipes"
+                              className="hover:bg-coder-primary/10 hover:text-coder-primary"
+                              onClick={() => findRecipesForItem(item.name)}
+                            >
+                              <ChefHat className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeItem(item.id)}
+                              title="Remove item"
+                              className="hover:bg-destructive/10 hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </motion.tr>
+                    ))
+                  )}
                 </AnimatePresence>
               </TableBody>
             </Table>

@@ -21,7 +21,7 @@ const sampleRecipes = [
     cookingTime: "20 mins",
     difficulty: "Easy",
     matchedIngredients: 3,
-    image: "/Grilled-Chicken-and-Spinach-Salad.jpeg?height=200&width=400",
+    image: "/placeholder.svg?height=200&width=400",
   },
   {
     id: 2,
@@ -31,7 +31,7 @@ const sampleRecipes = [
     cookingTime: "5 mins",
     difficulty: "Easy",
     matchedIngredients: 2,
-    image: "/Banana-Spinach-Smoothie.jpg?height=200&width=400",
+    image: "/placeholder.svg?height=200&width=400",
   },
   {
     id: 3,
@@ -41,7 +41,7 @@ const sampleRecipes = [
     cookingTime: "15 mins",
     difficulty: "Easy",
     matchedIngredients: 2,
-    image: "/sandwich.jpg?height=200&width=400", 
+    image: "/placeholder.svg?height=200&width=400",
   },
 ]
 

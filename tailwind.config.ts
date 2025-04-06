@@ -57,6 +57,10 @@ const config = {
           DEFAULT: "hsl(38, 92%, 50%)",
           foreground: "hsl(0, 0%, 100%)",
         },
+        success: {
+          DEFAULT: "hsl(142, 76%, 36%)",
+          foreground: "hsl(0, 0%, 100%)",
+        },
         // Custom coder theme colors
         coder: {
           background: "#0D0D0D",
@@ -93,14 +97,6 @@ const config = {
             boxShadow: "0 0 15px rgba(0, 168, 232, 0.8), 0 0 20px rgba(0, 168, 232, 0.5)",
           },
         },
-        "rotate-3d": {
-          "0%": { transform: "rotateY(0deg)" },
-          "100%": { transform: "rotateY(360deg)" },
-        },
-        "matrix-bg": {
-          "0%": { backgroundPosition: "0% 0%" },
-          "100%": { backgroundPosition: "100% 100%" },
-        },
         "text-shimmer": {
           "0%": { backgroundPosition: "100% 50%" },
           "100%": { backgroundPosition: "0% 50%" },
@@ -111,8 +107,6 @@ const config = {
         "accordion-up": "accordion-up 0.2s ease-out",
         float: "float 6s ease-in-out infinite",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
-        "rotate-3d": "rotate-3d 15s linear infinite",
-        "matrix-bg": "matrix-bg 15s ease infinite",
         "text-shimmer": "text-shimmer 3s ease-in-out infinite",
       },
       backgroundImage: {

@@ -65,7 +65,6 @@ export default function SignupPage() {
 
       // Store auth state (in a real app, this would be a JWT token)
       localStorage.setItem("isAuthenticated", "true")
-      localStorage.setItem("user", JSON.stringify({ name, email }))
 
       toast({
         title: "Account created",
